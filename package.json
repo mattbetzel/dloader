@@ -1,0 +1,15 @@
+{
+  "name": "dloader",
+  "version": "0.0.1",
+  "description": "Download images from around the web",
+  "author": "Matt Betzel mattbetzel@gmail.com",
+  "dependencies": {
+    "jsdom": "0.2.x",
+    "q": "0.8.x",
+    "underscore": "1.3.x",
+    "request": "2.9.x",
+    "temp": "0.4.x",
+    "mime": "1.2.x"
+  },
+  "engine": "node >= 0.6.17"
+}
