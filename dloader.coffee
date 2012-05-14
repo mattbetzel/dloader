@@ -8,7 +8,6 @@ request = require("request")
 util = require("util")
 temp = require("temp")
 mime = require("mime")
-ensureDir = require("ensureDir")
 path = require("path")
 
 log = (func) -> (obj) -> console.log(func(obj)); obj
@@ -50,12 +49,25 @@ uniqueFile = -> temp.path({suffix: ".tmp"})
 
 moveFile = ([src, md5, type]) -> 
   dest = toFilename(md5, type)
-  createDirectories(dest).then(-> renameFile(src, dest))
+  ensureDir(path.dirname(dest)).then(-> renameFile(src, dest))
 
-createDirectories = (filePath) -> Q.ncall(ensureDir, ensureDir, path.dirname(filePath), 0o755)
 renameFile = (src, dest) -> Q.ncall(fs.rename, fs, src, dest)
 
 moveFiles = (files) -> Q.all(_.map(files, moveFile))
+
+ensureDir = (dirPath) ->
+  ensure_ = (memo, dirSeg) -> memo.then(-> pathExists(dirSeg))
+    .then((exists) -> Q.ncall(fs.mkdir, fs, dirSeg) unless exists)
+  pathSegments(dirPath).reduce(ensure_, Q.resolve())
+
+pathExists = (filePath) ->
+  defer = Q.defer()
+  path.exists(filePath, (exists) -> defer.resolve(exists))
+  defer.promise
+
+pathSegments = (path) ->
+  segment = if (index = path.lastIndexOf("/")) == -1 then "" else path[...index]
+  if segment.length == 0 then [path] else pathSegments(segment).concat(path)
 
 retrieveDOM(process.argv[2])
   .then(findPosts)
