@@ -18,6 +18,10 @@ identifyType = (href) -> mime.lookup(href)
 toFilename = (base, name, type) ->
   path.join(base, name[...2], name + "." + mime.extension(type))
 
+reduceToPromise = (arr, func) ->
+  reduce_ = (memo, obj) -> memo.then(-> func(obj))
+  arr.reduce(reduce_, Q.resolve())
+
 retrieveDOM = (href) ->
   Q.ncall(jsdom.env, jsdom, href, ["http://code.jquery.com/jquery-1.7.2.min.js"])
 
@@ -45,20 +49,19 @@ writeToFiles = (pathFunc) -> (hrefs) ->
 
 uniqueFile = -> temp.path({suffix: ".tmp"})
 
-moveFile = (base, [src, md5, type]) -> 
+moveFile = (base) -> ([src, md5, type]) ->
   dest = toFilename(base, md5, type)
   ensureDir(path.dirname(dest)).then(-> renameFile(src, dest))
 
 renameFile = (src, dest) -> Q.ncall(fs.rename, fs, src, dest)
 
-moveFiles = (base) -> (files) ->
-  reduce_ = (memo, file) -> memo.then(-> moveFile(base, file))
-  files.reduce(reduce_, Q.resolve())
+moveFiles = (base) -> (files) -> reduceToPromise(files, moveFile(base))
 
-ensureDir = (dirPath) ->
-  ensure_ = (memo, dirSeg) -> memo.then(-> pathExists(dirSeg))
-    .then((exists) -> Q.ncall(fs.mkdir, fs, dirSeg) unless exists)
-  pathSegments(dirPath).reduce(ensure_, Q.resolve())
+createPathUnlessExists = (dirPath) ->
+  pathExists(dirPath)
+    .then((exists) -> Q.ncall(fs.mkdir, fs, dirPath) unless exists)
+
+ensureDir = (dirPath) -> reduceToPromise(pathSegments(dirPath), createPathUnlessExists)
 
 pathExists = (filePath) ->
   defer = Q.defer()
