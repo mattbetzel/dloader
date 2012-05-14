@@ -1,17 +1,14 @@
 jsdom = require("jsdom")
 Q = require("q")
-_ = require("underscore")
 fs = require("fs")
 http = require("http")
 crypto = require("crypto")
 request = require("request")
-util = require("util")
 temp = require("temp")
 mime = require("mime")
 path = require("path")
 
 log = (func) -> (obj) -> console.log(func(obj)); obj
-inspect = (obj) -> console.log(util.inspect(obj)); obj
 
 take = (n) -> (arr) -> arr[...n]
 
@@ -27,8 +24,8 @@ findPosts = (window) -> window.$(".gallery")
 findImagePageLinks = (galleries) -> link.href for link in galleries.find("a")
 
 retrieveImgLinks = (pageLinks) ->
-  Q.all(_.map(pageLinks, retrieveDOM))
-    .then((windows) -> _.map(windows, retrieveImgFromPage))
+  Q.all(pageLinks.map(retrieveDOM))
+    .then((windows) -> windows.map(retrieveImgFromPage))
 
 retrieveImgFromPage = (window) -> window.$(".p-con").find("a").attr("href")
 
@@ -53,7 +50,7 @@ moveFile = ([src, md5, type]) ->
 
 renameFile = (src, dest) -> Q.ncall(fs.rename, fs, src, dest)
 
-moveFiles = (files) -> Q.all(_.map(files, moveFile))
+moveFiles = (files) -> Q.all(files.map(moveFile))
 
 ensureDir = (dirPath) ->
   ensure_ = (memo, dirSeg) -> memo.then(-> pathExists(dirSeg))
