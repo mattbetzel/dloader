@@ -15,7 +15,8 @@ take = (n) -> (arr) -> arr[...n]
 createHasher = -> crypto.createHash("md5")
 
 identifyType = (href) -> mime.lookup(href)
-toFilename = (base, type) -> base[...2] + "/" + base + "." + mime.extension(type)
+toFilename = (base, name, type) ->
+  path.join(base, name[...2], name + "." + mime.extension(type))
 
 retrieveDOM = (href) ->
   Q.ncall(jsdom.env, jsdom, href, ["http://code.jquery.com/jquery-1.7.2.min.js"])
@@ -44,13 +45,15 @@ writeToFiles = (pathFunc) -> (hrefs) ->
 
 uniqueFile = -> temp.path({suffix: ".tmp"})
 
-moveFile = ([src, md5, type]) -> 
-  dest = toFilename(md5, type)
+moveFile = (base, [src, md5, type]) -> 
+  dest = toFilename(base, md5, type)
   ensureDir(path.dirname(dest)).then(-> renameFile(src, dest))
 
 renameFile = (src, dest) -> Q.ncall(fs.rename, fs, src, dest)
 
-moveFiles = (files) -> Q.all(files.map(moveFile))
+moveFiles = (base) -> (files) ->
+  reduce_ = (memo, file) -> memo.then(-> moveFile(base, file))
+  files.reduce(reduce_, Q.resolve())
 
 ensureDir = (dirPath) ->
   ensure_ = (memo, dirSeg) -> memo.then(-> pathExists(dirSeg))
@@ -73,5 +76,5 @@ retrieveDOM(process.argv[2])
   .then(log((posts) -> "Found #{posts.length} links"))
   .then(retrieveImgLinks)
   .then(writeToFiles(uniqueFile))
-  .then(moveFiles)
+  .then(moveFiles(process.argv[3]))
   .end()
