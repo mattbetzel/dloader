@@ -1,20 +1,21 @@
-jsdom = require("jsdom")
-Q = require("q")
 fs = require("fs")
+path = require("path")
 http = require("http")
 crypto = require("crypto")
+jsdom = require("jsdom")
+Q = require("q")
 request = require("request")
 temp = require("temp")
 mime = require("mime")
-path = require("path")
 
 log = (func) -> (obj) -> console.log(func(obj)); obj
 
 take = (n) -> (arr) -> arr[...n]
 
-createHasher = -> crypto.createHash("md5")
+createHash = -> crypto.createHash("md5")
+computeDigest = (hash) -> hash.digest("hex")
 
-identifyType = (href) -> mime.lookup(href)
+mimeType = (url) -> mime.lookup(url)
 toFilename = (base, name, type) ->
   path.join(base, name[...2], name + "." + mime.extension(type))
 
@@ -22,8 +23,8 @@ reduceToPromise = (arr, func) ->
   reduce_ = (memo, obj) -> memo.then(-> func(obj))
   arr.reduce(reduce_, Q.resolve())
 
-retrieveDOM = (href) ->
-  Q.ncall(jsdom.env, jsdom, href, ["http://code.jquery.com/jquery-1.7.2.min.js"])
+jQuerySrc = ["http://code.jquery.com/jquery-1.7.2.min.js"]
+retrieveDOM = (url) -> Q.ncall(jsdom.env, jsdom, url, jQuerySrc)
 
 findPosts = (window) -> window.$(".gallery")
 findImagePageLinks = (galleries) -> link.href for link in galleries.find("a")
@@ -34,18 +35,18 @@ retrieveImgLinks = (pageLinks) ->
 
 retrieveImgFromPage = (window) -> window.$(".p-con").find("a").attr("href")
 
-writeToFile = (filePath, href) ->
+writeToFile = (filePath, url) ->
   defer = Q.defer()
-  hasher = createHasher()
-  request(href)
-    .on("data", (data) -> hasher.update(data))
-    .on("end", -> defer.resolve([filePath, hasher.digest("hex"), identifyType(href)]))
+  hash = createHash()
+  request(url)
+    .on("data", (data) -> hash.update(data))
+    .on("end", -> defer.resolve([filePath, computeDigest(hash), mimeType(url)]))
     .on("error", (err) -> defer.reject(err))
     .pipe(fs.createWriteStream(filePath))
   defer.promise
 
-writeToFiles = (pathFunc) -> (hrefs) ->
-  Q.all(writeToFile(pathFunc(), href) for href in hrefs)
+writeToFiles = (pathFunc) -> (urls) ->
+  Q.all(writeToFile(pathFunc(), url) for url in urls)
 
 uniqueFile = -> temp.path({suffix: ".tmp"})
 
@@ -61,7 +62,8 @@ createPathUnlessExists = (dirPath) ->
   pathExists(dirPath)
     .then((exists) -> Q.ncall(fs.mkdir, fs, dirPath) unless exists)
 
-ensureDir = (dirPath) -> reduceToPromise(pathSegments(dirPath), createPathUnlessExists)
+ensureDir = (dirPath) ->
+  reduceToPromise(pathSegments(dirPath), createPathUnlessExists)
 
 pathExists = (filePath) ->
   defer = Q.defer()
