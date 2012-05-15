@@ -8,7 +8,7 @@ request = require("request")
 temp = require("temp")
 mime = require("mime")
 
-ensuredir = require("./lib/ensuredir")
+ensureDir = require("./lib/ensure_dir")
 util = require("./lib/util")
 
 createHash = -> crypto.createHash("md5")
@@ -47,7 +47,7 @@ uniqueFile = -> temp.path({suffix: ".tmp"})
 
 moveFile = (base) -> ([src, md5, type]) ->
   dest = toFilename(base, md5, type)
-  ensuredir(path.dirname(dest)).then(-> renameFile(src, dest))
+  ensureDir(path.dirname(dest)).then(-> renameFile(src, dest))
 
 renameFile = (src, dest) -> Q.ncall(fs.rename, fs, src, dest)
 
