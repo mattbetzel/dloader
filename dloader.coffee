@@ -10,6 +10,7 @@ mime = require("mime")
 
 ensureDir = require("./lib/ensure_dir")
 util = require("./lib/util")
+pageIterator = require("./lib/page_iterator")
 
 createHash = -> crypto.createHash("md5")
 computeDigest = (hash) -> hash.digest("hex")
@@ -53,15 +54,16 @@ renameFile = (src, dest) -> Q.ncall(fs.rename, fs, src, dest)
 
 moveFiles = (base) -> (files) -> util.reduceToPromise(files, moveFile(base))
 
-retrievePosts = (url, destDir) ->
-  retrieveDOM(url)
-    .then(findPosts)
+retrievePosts = (destDir) -> (window) ->
+  console.log "Retriving posts..."
+  Q.resolve(findPosts(window))
     .then(util.log((posts) -> "Found #{posts.size()} posts"))
     .then(findImagePageLinks)
     .then(util.log((posts) -> "Found #{posts.length} links"))
     .then(retrieveImgLinks)
     .then(writeToFiles(uniqueFile))
     .then(moveFiles(destDir))
-    .end()
 
-retrievePosts(process.argv[2], process.argv[3])
+nextPage = (window) -> window.$(".nextpostslink").attr("href")
+
+pageIterator(retrieveDOM, nextPage)(retrievePosts(process.argv[3]))(process.argv[2], 2).end()
