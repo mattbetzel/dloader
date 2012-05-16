@@ -8,7 +8,7 @@ request = require("request")
 temp = require("temp")
 mime = require("mime")
 
-ensureDir = require("./lib/ensure_dir")
+moveFiles = require("./lib/move/s3")
 util = require("./lib/util")
 pageIterator = require("./lib/page_iterator")
 
@@ -46,14 +46,6 @@ writeToFiles = (pathFunc) -> (urls) ->
 
 uniqueFile = -> temp.path({suffix: ".tmp"})
 
-moveFile = (base) -> ([src, md5, type]) ->
-  dest = toFilename(base, md5, type)
-  ensureDir(path.dirname(dest)).then(-> renameFile(src, dest))
-
-renameFile = (src, dest) -> Q.ncall(fs.rename, fs, src, dest)
-
-moveFiles = (base) -> (files) -> util.reduceToPromise(files, moveFile(base))
-
 retrievePosts = (destDir) -> (window) ->
   console.log "Retriving posts..."
   Q.resolve(findPosts(window))
@@ -62,8 +54,10 @@ retrievePosts = (destDir) -> (window) ->
     .then(util.log((posts) -> "Found #{posts.length} links"))
     .then(retrieveImgLinks)
     .then(writeToFiles(uniqueFile))
-    .then(moveFiles(destDir))
+    .then(moveFiles(destDir, toFilename))
 
 nextPage = (window) -> window.$(".nextpostslink").attr("href")
 
-pageIterator(retrieveDOM, nextPage)(retrievePosts(process.argv[3]))(process.argv[2], 2).end()
+url = process.argv[2]
+base = process.argv[3]
+pageIterator(retrieveDOM, nextPage)(retrievePosts(base))(url, 2).end()
