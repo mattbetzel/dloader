@@ -10,7 +10,7 @@ mime = require("mime")
 
 moveFiles = require("./lib/move/s3")
 util = require("./lib/util")
-pageIterator = require("./lib/page_iterator")
+iterate = require("./lib/iterate")
 
 createHash = -> crypto.createHash("md5")
 computeDigest = (hash) -> hash.digest("hex")
@@ -60,4 +60,4 @@ nextPage = (window) -> window.$(".nextpostslink").attr("href")
 
 url = process.argv[2]
 base = process.argv[3]
-pageIterator(retrieveDOM, nextPage)(retrievePosts(base))(url, 2).end()
+iterate(retrieveDOM, nextPage)(retrievePosts(base))(url, 2).end()
