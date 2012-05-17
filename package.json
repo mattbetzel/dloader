@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Download images from around the web",
   "author": "Matt Betzel mattbetzel@gmail.com",
-  "bin": "./dloader",
+  "bin": "./bin/dloader",
   "dependencies": {
     "jsdom": "0.2.x",
     "q": "0.8.x",

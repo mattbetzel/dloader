@@ -10,9 +10,9 @@ request = require("request")
 temp = require("temp")
 mime = require("mime")
 
-moveFiles = require("./lib/move/s3")
-util = require("./lib/util")
-iterate = require("./lib/iterate")
+moveFiles = require("../lib/move/s3")
+util = require("../lib/util")
+iterate = require("../lib/iterate")
 
 createHash = -> crypto.createHash("md5")
 computeDigest = (hash) -> hash.digest("hex")

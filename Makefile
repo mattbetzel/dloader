@@ -4,4 +4,4 @@ test-unit:
 	mocha -r coffee-script -r should -R spec test/*.coffee
 
 lint:
-	coffeelint -r dloader lib/ test/
+	coffeelint -r bin/dloader lib/ test/
